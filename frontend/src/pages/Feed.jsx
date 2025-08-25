@@ -74,26 +74,37 @@ const loadPosts = async () => {
   try {
     const response = await createComment(writerId, postId, commentData);
 
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            comments: [...(post.comments || []), response.comment], // add new comment
-            commentIds: [...(post.commentIds || []), response.comment._id],
-            commentCount: response.commentCount ?? (post.commentCount || 0) + 1,
-          };
-        }
-        return post;
+    // If API didn't return the comment for any reason, just refetch posts safely
+    if (!response || !response.comment) {
+      await loadPosts();
+      return response;
+    }
+
+    setPosts(prevPosts =>
+      prevPosts.map(post => {
+        if (post._id !== postId) return post;
+        return {
+          ...post,
+          comments: [...(post.comments || []), response.comment],
+          commentIds: response.comment?._id
+            ? [...(post.commentIds || []), response.comment._id]
+            : (post.commentIds || []),
+          commentCount:
+            typeof response.commentCount === "number"
+              ? response.commentCount
+              : (post.commentCount || 0) + 1,
+        };
       })
     );
+
     return response;
   } catch (err) {
     console.error("Error creating comment:", err);
-    alert(err.response?.data?.message || "Failed to add comment.");
+    alert(err?.response?.data?.message || "Failed to add comment.");
     throw err;
   }
 };
+
 
 
   const handleCreatePost = () => {

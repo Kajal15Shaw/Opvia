@@ -41,7 +41,7 @@ const createComment = async( req, res, next ) => {
         return next(createHttpError(404, 'user profile not found'));
     }
 
-    if(writerId === userProfile._id) {
+    if(writerId !== userProfile._id.toString()) {
         return next(createHttpError(401, 'Unauthorized'));
     }
 
@@ -90,7 +90,12 @@ const createComment = async( req, res, next ) => {
     }
 
     if(updatedPost) {
-        res.status(201).json({'message' : 'comment created successfully'});
+        res.status(201).json({
+            'message' : 'comment created successfully',
+            comment,
+            commentCount: updatedPost.commentIds.length,
+            postId: updatedPost._id,
+});
     } else {
         res.status(500).json({'error' : 'Internal Server Error'});
     }
